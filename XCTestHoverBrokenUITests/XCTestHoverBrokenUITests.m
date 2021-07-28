@@ -26,22 +26,37 @@
     // Put teardown code here. This method is called after the invocation of each test method in the class.
 }
 
-- (void)testExample {
+- (void)testHover {
     // UI tests must launch the application that they test.
     XCUIApplication *app = [[XCUIApplication alloc] init];
     [app launch];
 
+    NSLog(@"%@", app.debugDescription);
+
     // Use recording to get started writing UI tests.
     // Use XCTAssert and related functions to verify your tests produce the correct results.
-}
-
-- (void)testLaunchPerformance {
-    if (@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *)) {
-        // This measures how long it takes to launch your application.
-        [self measureWithMetrics:@[[[XCTApplicationLaunchMetric alloc] init]] block:^{
-            [[[XCUIApplication alloc] init] launch];
-        }];
+    for (XCUIElement* textField in app.staticTexts.allElementsBoundByIndex) {
+        NSLog(@"%@", textField.label);
     }
+
+    NSPredicate* predicateToFindFlutterView = [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject, NSDictionary<NSString*, id>* _Nullable bindings) {
+        XCUIElement* element = evaluatedObject;
+        return [element.identifier hasPrefix:@"my_view"];
+    }];
+    XCUIElement* myView = [[app descendantsMatchingType:XCUIElementTypeAny]
+        elementMatchingPredicate:predicateToFindFlutterView];
+    XCTAssertTrue([myView waitForExistenceWithTimeout:1], @"myView not found");
+
+    XCTAssertTrue([app.staticTexts[@"initial"] waitForExistenceWithTimeout:1], @"communications not established");
+
+    [myView hover];
+    XCTAssertTrue([app.staticTexts[@"hover"] waitForExistenceWithTimeout:1], @"hover not processed correctly");
+
+    [myView tap];
+    XCTAssertTrue([app.staticTexts[@"touches_ended"] waitForExistenceWithTimeout:1], @"hover not processed correctly");
+
+    [myView hover];
+    XCTAssertTrue([app.staticTexts[@"hover"] waitForExistenceWithTimeout:1], @"hover not processed correctly");
 }
 
 @end
